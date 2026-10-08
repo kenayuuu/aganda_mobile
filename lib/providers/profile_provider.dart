@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/services/api_service.dart';
 import '../models/user_model.dart';
+import 'dart:io';
 
 class ProfileProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
@@ -37,6 +38,30 @@ class ProfileProvider extends ChangeNotifier {
       _loading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> updateAvatar(File file) async {
+    final currentUser = _user;
+
+    if (currentUser == null) {
+      throw Exception('Data profile tidak tersedia.');
+    }
+
+    await _apiService.upload(
+      '/profile',
+      file: file,
+      fieldName: 'avatar',
+      authenticated: true,
+      fields: {
+        '_method': 'PUT',
+        'name': currentUser.name,
+        'email': currentUser.email,
+        'phone': currentUser.phone ?? '',
+        'address': currentUser.address ?? '',
+      },
+    );
+
+    await fetchProfile();
   }
 
   Future<void> updateProfile({

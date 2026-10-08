@@ -6,6 +6,7 @@ class GroupDetailModel {
   final String? ownerName;
   final String? ownerMemberId;
   final String? ownerRole;
+  final String? ownerAvatar;
   final int? packageId;
   final String? packageName;
   final double packagePrice;
@@ -21,6 +22,7 @@ class GroupDetailModel {
     this.status,
     this.ownerId,
     this.ownerName,
+    this.ownerAvatar,
     this.ownerMemberId,
     this.ownerRole,
     this.packageId,
@@ -56,8 +58,11 @@ class GroupDetailModel {
           groupData['kode_group']?.toString() ??
           'Group',
       status: groupData['status']?.toString(),
-      ownerId: _toNullableInt(ownerData['id']),
+      ownerId: ownerData['id'] == null
+          ? null
+          : int.tryParse(ownerData['id'].toString()),
       ownerName: ownerData['name']?.toString(),
+      ownerAvatar: ownerData['avatar']?.toString(),
       ownerMemberId: ownerData['member_id']?.toString(),
       ownerRole: ownerData['role']?.toString(),
       packageId: _toNullableInt(packageData['id']),
@@ -105,6 +110,7 @@ class GroupMemberModel {
   final String? email;
   final String? phone;
   final String? memberId;
+  final String? avatar;
 
   GroupMemberModel({
     required this.id,
@@ -116,6 +122,7 @@ class GroupMemberModel {
     this.email,
     this.phone,
     this.memberId,
+    this.avatar,
   });
 
   factory GroupMemberModel.fromJson(Map<String, dynamic> json) {
@@ -137,12 +144,15 @@ class GroupMemberModel {
           ? null
           : int.tryParse(json['registered_by'].toString()),
       registeredByName: registeredByData['name']?.toString(),
-      name: calonData['nama']?.toString() ??
+      name: calonData['nama_lengkap']?.toString() ??
+          calonData['nama']?.toString() ??
           calonData['name']?.toString(),
       email: calonData['email']?.toString(),
-      phone: calonData['no_hp']?.toString() ??
+      phone: calonData['no_telepon']?.toString() ??
+          calonData['no_hp']?.toString() ??
           calonData['phone']?.toString(),
       memberId: calonData['member_id']?.toString(),
+      avatar: calonData['avatar']?.toString(),
     );
   }
 }

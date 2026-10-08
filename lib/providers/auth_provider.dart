@@ -9,17 +9,28 @@ class AuthProvider extends ChangeNotifier {
 
   UserModel? _user;
   bool _loading = true;
+  int _authRequestId = 0;
+
+  AuthProvider() {
+    checkSession();
+  }
 
   UserModel? get user => _user;
   bool get loading => _loading;
   bool get isLoggedIn => _user != null;
 
   Future<void> checkSession() async {
+    final requestId = ++_authRequestId;
+
     _loading = true;
     notifyListeners();
 
     try {
       final loggedIn = await _sessionService.isLoggedIn();
+
+      if (requestId != _authRequestId) {
+        return;
+      }
 
       if (!loggedIn) {
         _user = null;
@@ -31,6 +42,10 @@ class AuthProvider extends ChangeNotifier {
         authenticated: true,
       );
 
+      if (requestId != _authRequestId) {
+        return;
+      }
+
       final userData = response['user'];
 
       if (userData is Map<String, dynamic>) {
@@ -40,11 +55,17 @@ class AuthProvider extends ChangeNotifier {
         _user = null;
       }
     } catch (_) {
+      if (requestId != _authRequestId) {
+        return;
+      }
+
       await _sessionService.clearSession();
       _user = null;
     } finally {
-      _loading = false;
-      notifyListeners();
+      if (requestId == _authRequestId) {
+        _loading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -52,6 +73,8 @@ class AuthProvider extends ChangeNotifier {
     required String login,
     required String password,
   }) async {
+    final requestId = ++_authRequestId;
+
     _loading = true;
     notifyListeners();
 
@@ -82,14 +105,22 @@ class AuthProvider extends ChangeNotifier {
         memberId: user.memberId,
       );
 
+      if (requestId != _authRequestId) {
+        return;
+      }
+
       _user = user;
     } finally {
-      _loading = false;
-      notifyListeners();
+      if (requestId == _authRequestId) {
+        _loading = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> logout() async {
+    ++_authRequestId;
+
     try {
       await _apiService.post(
         '/logout',
@@ -100,6 +131,7 @@ class AuthProvider extends ChangeNotifier {
     await _sessionService.clearSession();
 
     _user = null;
+    _loading = false;
     notifyListeners();
   }
 }

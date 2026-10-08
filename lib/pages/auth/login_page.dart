@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 
@@ -36,12 +37,23 @@ class _LoginPageState extends State<LoginPage> {
         login: _loginController.text.trim(),
         password: _passwordController.text,
       );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (auth.isLoggedIn) {
+        Navigator.of(context).pop();
+      }
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }
@@ -97,10 +109,12 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 36),
                   TextFormField(
                     controller: _loginController,
-                    keyboardType: TextInputType.emailAddress,
+                    keyboardType: TextInputType.text,
                     decoration: InputDecoration(
                       labelText: 'Email atau Member ID',
-                      prefixIcon: const Icon(Icons.person_outline),
+                      prefixIcon: const Icon(
+                        Icons.person_outline,
+                      ),
                       filled: true,
                       fillColor: AppColors.white,
                       border: OutlineInputBorder(
@@ -122,7 +136,9 @@ class _LoginPageState extends State<LoginPage> {
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
                       labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock_outline),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                      ),
                       suffixIcon: IconButton(
                         onPressed: () {
                           setState(() {

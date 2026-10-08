@@ -1,59 +1,55 @@
 import 'package:flutter/foundation.dart';
 import '../core/services/api_service.dart';
-import '../models/group_model.dart';
+import '../models/bonus_history_model.dart';
 
-class GroupProvider extends ChangeNotifier {
+class BonusHistoryProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
 
-  List<GroupModel> _groups = [];
+  List<BonusHistoryModel> _histories = [];
   bool _loading = false;
   String? _error;
 
-  List<GroupModel> get groups => _groups;
+  List<BonusHistoryModel> get histories => _histories;
   bool get loading => _loading;
   String? get error => _error;
 
-  Future<void> fetchGroups() async {
+  Future<void> fetchHistory() async {
     _loading = true;
     _error = null;
     notifyListeners();
 
     try {
       final response = await _apiService.get(
-        '/groups',
+        '/bonus/history',
         authenticated: true,
       );
 
-      debugPrint('GROUP API RESPONSE: $response');
-
-      final data = response['groups'];
+      final data = response['data'];
 
       if (data is List) {
-        _groups = data
+        _histories = data
             .whereType<Map>()
             .map(
-              (item) => GroupModel.fromJson(
+              (item) => BonusHistoryModel.fromJson(
+            Map<String, dynamic>.from(item),
+          ),
+        )
+            .toList();
+      } else if (response['bonus'] is List) {
+        _histories = (response['bonus'] as List)
+            .whereType<Map>()
+            .map(
+              (item) => BonusHistoryModel.fromJson(
             Map<String, dynamic>.from(item),
           ),
         )
             .toList();
       } else {
-        _groups = [];
+        _histories = [];
       }
-
-      debugPrint('TOTAL GROUP: ${_groups.length}');
-
-      final totalMember = _groups.fold<int>(
-        0,
-            (total, group) => total + group.memberCount,
-      );
-
-      debugPrint('TOTAL MEMBER: $totalMember');
     } catch (e) {
-      _groups = [];
+      _histories = [];
       _error = e.toString();
-
-      debugPrint('GROUP ERROR: $e');
     } finally {
       _loading = false;
       notifyListeners();
@@ -61,6 +57,6 @@ class GroupProvider extends ChangeNotifier {
   }
 
   Future<void> refresh() async {
-    await fetchGroups();
+    await fetchHistory();
   }
 }

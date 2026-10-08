@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../core/constants/app_colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -12,11 +14,18 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final ImagePicker _imagePicker = ImagePicker();
+  bool _initialized = false;
+
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_initialized) return;
+    _initialized = true;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<ProfileProvider>().fetchProfile();
     });
   }
@@ -38,7 +47,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: AppColors.red,
                 foregroundColor: AppColors.black,
               ),
               child: const Text('Keluar'),
@@ -53,6 +62,65 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     await context.read<AuthProvider>().logout();
+  }
+
+  Future<void> _changeAvatar() async {
+    try {
+      final image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1200,
+        maxHeight: 1200,
+      );
+
+      if (image == null) {
+        return;
+      }
+
+      final file = File(image.path);
+
+      if (!mounted) {
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) {
+          return const Center(
+            child: CircularProgressIndicator(
+              color: AppColors.primary,
+            ),
+          );
+        },
+      );
+
+      await context.read<ProfileProvider>().updateAvatar(file);
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Foto profil berhasil diperbarui.'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context, rootNavigator: true).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+        ),
+      );
+    }
   }
 
   void _showEditProfile() {
@@ -230,21 +298,46 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 42,
-                    backgroundColor: AppColors.white,
-                    backgroundImage: user?.avatarUrl != null &&
-                        user!.avatarUrl!.isNotEmpty
-                        ? NetworkImage(user!.avatarUrl!)
-                        : null,
-                    child: user?.avatarUrl == null ||
-                        user!.avatarUrl!.isEmpty
-                        ? const Icon(
-                      Icons.person,
-                      size: 45,
-                      color: AppColors.grey,
-                    )
-                        : null,
+                  GestureDetector(
+                    onTap: _changeAvatar,
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 42,
+                          backgroundColor: AppColors.white,
+                          backgroundImage: user?.avatarUrl != null &&
+                              user!.avatarUrl!.isNotEmpty
+                              ? NetworkImage(user.avatarUrl!)
+                              : null,
+                          child: user?.avatarUrl == null ||
+                              user!.avatarUrl!.isEmpty
+                              ? const Icon(
+                            Icons.person,
+                            size: 45,
+                            color: AppColors.grey,
+                          )
+                              : null,
+                        ),
+                        Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.primary,
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_outlined,
+                            size: 16,
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 14),
                   Text(

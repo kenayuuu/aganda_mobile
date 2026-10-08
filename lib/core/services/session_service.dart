@@ -8,6 +8,13 @@ class SessionService {
   static const String roleKey = 'role';
   static const String memberIdKey = 'member_id';
 
+  static SharedPreferences? _prefs;
+
+  Future<SharedPreferences> _getPrefs() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
+  }
+
   Future<void> saveSession({
     required String token,
     required int userId,
@@ -16,7 +23,7 @@ class SessionService {
     required String role,
     String? memberId,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
 
     await prefs.setString(tokenKey, token);
     await prefs.setInt(userIdKey, userId);
@@ -32,28 +39,34 @@ class SessionService {
   }
 
   Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     return prefs.getString(tokenKey);
   }
 
   Future<String?> getRole() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     return prefs.getString(roleKey);
   }
 
   Future<String?> getName() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     return prefs.getString(nameKey);
   }
 
   Future<int?> getUserId() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     return prefs.getInt(userIdKey);
   }
 
   Future<void> clearSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    final prefs = await _getPrefs();
+
+    await prefs.remove(tokenKey);
+    await prefs.remove(userIdKey);
+    await prefs.remove(nameKey);
+    await prefs.remove(emailKey);
+    await prefs.remove(roleKey);
+    await prefs.remove(memberIdKey);
   }
 
   Future<bool> isLoggedIn() async {
